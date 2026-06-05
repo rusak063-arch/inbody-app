@@ -2,67 +2,145 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>InBody Progress Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1e1e2f; color: #c9d1d9; padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e2f; color: #c9d1d9;
+            padding: 0 0 20px 0;
+            margin: 0;
         }
-        h1 { text-align: center; color: #58a6ff; margin-bottom: 15px; font-size: 1.5em; }
+        .header {
+            background: #161b22;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #30363d;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            color: #58a6ff;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #logoutBtn {
+            background: #da3633;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #logoutBtn:hover { background: #c42e2b; }
+
         .upload-container {
-            text-align: center; margin: 10px auto;
-            background: #161b22; padding: 12px; border-radius: 10px;
-            width: 100%; max-width: 500px;
+            margin: 16px auto;
+            background: #161b22;
+            padding: 16px;
+            border-radius: 12px;
+            width: calc(100% - 20px);
+            max-width: 500px;
+            text-align: center;
+        }
+        .upload-container form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
         input[type="file"] {
-            background: #0d1117; color: #c9d1d9;
-            padding: 10px; border: 1px solid #30363d;
-            border-radius: 6px; width: 100%; max-width: 280px; margin: 5px 0;
-            font-size: 0.9em;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 12px;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 0.95em;
         }
-        button {
-            background: #238636; color: white; border: none;
-            padding: 12px 25px; border-radius: 6px; cursor: pointer;
-            font-weight: bold; margin: 5px 0; width: 100%; max-width: 280px;
+        button[type="submit"] {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
             font-size: 1em;
+            cursor: pointer;
+            width: 100%;
         }
-        button:hover { background: #2ea043; }
+        button[type="submit"]:hover { background: #2ea043; }
         .status { margin-top: 10px; font-size: 0.9em; }
 
         .summary {
-            display: flex; flex-wrap: wrap; justify-content: center;
-            gap: 10px; margin: 15px auto; max-width: 1100px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 16px auto;
+            max-width: 1100px;
+            padding: 0 10px;
         }
         .card {
-            background: #161b22; border-radius: 12px; padding: 12px 10px;
-            flex: 1 0 110px; text-align: center; max-width: 150px;
+            background: #161b22;
+            border-radius: 12px;
+            padding: 12px 8px;
+            flex: 1 0 100px;
+            text-align: center;
+            max-width: 140px;
+            min-width: 90px;
         }
-        .card .value { font-size: 1.6em; font-weight: bold; color: #58a6ff; }
-        .card .label { font-size: 0.75em; color: #8b949e; margin-top: 5px; }
+        .card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #58a6ff;
+            word-break: break-word;
+        }
+        .card .label {
+            font-size: 0.7em;
+            color: #8b949e;
+            margin-top: 4px;
+        }
 
         .chart-container {
-            width: 100%; max-width: 900px; margin: 20px auto;
-            background: #161b22; border-radius: 12px; padding: 12px;
+            width: calc(100% - 16px);
+            max-width: 900px;
+            margin: 20px auto;
+            background: #161b22;
+            border-radius: 12px;
+            padding: 12px;
         }
-        canvas { max-height: 300px; height: auto; }
+        canvas { max-height: 280px; height: auto; width: 100% !important; }
 
-        #logoutBtn { float: right; background: #da3633; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
         @media (max-width: 600px) {
-            body { padding: 5px; }
-            h1 { font-size: 1.3em; }
-            .card { flex: 1 0 100px; padding: 10px; }
-            .card .value { font-size: 1.4em; }
-            canvas { max-height: 250px; }
+            .header h1 { font-size: 1.1em; }
+            .card .value { font-size: 1.3em; }
+            canvas { max-height: 220px; }
+            .upload-container { padding: 12px; }
         }
     </style>
 </head>
 <body>
-    <div style="text-align: right;"><button id="logoutBtn">Выйти</button></div>
-    <h1>📊 Прогресс по InBody</h1>
+    <div class="header">
+        <h1>📊 InBody</h1>
+        <button id="logoutBtn">🚪 Выйти</button>
+    </div>
+
     <div class="upload-container">
         <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <input type="file" id="pdfFile" name="file" accept=".pdf" required>
@@ -79,18 +157,14 @@
     <div class="chart-container"><canvas id="bmrChart"></canvas></div>
 
     <script>
-        // Кнопка «Выйти» всегда работает
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = '/login.html';
         });
 
         const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login.html';
-        }
+        if (!token) window.location.href = '/login.html';
 
-        // Функция запроса: при 401 автоматически сбрасывает токен и уходит на вход
         async function authFetch(url, options = {}) {
             const headers = { 'Authorization': 'Bearer ' + token, ...options.headers };
             const res = await fetch(url, { ...options, headers });
@@ -126,13 +200,14 @@
                 data: { datasets },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: {
                             labels: {
                                 boxWidth: 12,
-                                padding: 10,
-                                font: { size: 11 }
+                                padding: 8,
+                                font: { size: 10 }
                             }
                         }
                     },
@@ -144,12 +219,12 @@
                                 displayFormats: { day: 'dd.MM' }
                             },
                             grid: { color: '#30363d' },
-                            ticks: { maxTicksLimit: 8, font: { size: 10 } }
+                            ticks: { maxTicksLimit: 6, font: { size: 9 } }
                         },
                         y: {
                             beginAtZero: false,
                             grace: '5%',
-                            ticks: { maxTicksLimit: 5, font: { size: 10 } },
+                            ticks: { maxTicksLimit: 5, font: { size: 9 } },
                             grid: { color: '#30363d' }
                         },
                         ...customScales
@@ -167,7 +242,7 @@
         function renderSummary(data) {
             const container = document.getElementById('summaryContainer');
             if (data.length === 0) {
-                container.innerHTML = '<p style="text-align:center">Нет данных</p>';
+                container.innerHTML = '<p style="text-align:center; grid-column:1/-1">Нет данных</p>';
                 return;
             }
             const last = data[data.length-1];
@@ -200,8 +275,8 @@
                 borderColor: '#58a6ff',
                 backgroundColor: 'rgba(88,166,255,0.1)',
                 fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 3,
+                pointHoverRadius: 5,
                 pointBackgroundColor: '#58a6ff',
                 tension: 0.2
             }]));
@@ -214,8 +289,8 @@
                     backgroundColor: 'rgba(63,185,80,0.1)',
                     yAxisID: 'y',
                     tension: 0.2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
                     pointBackgroundColor: '#3fb950'
                 },
                 {
@@ -225,8 +300,8 @@
                     backgroundColor: 'rgba(248,81,73,0.1)',
                     yAxisID: 'y1',
                     tension: 0.2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
                     pointBackgroundColor: '#f85149'
                 }
             ], {
@@ -236,7 +311,7 @@
                     title: { display: true, text: 'кг' },
                     beginAtZero: false,
                     grace: '5%',
-                    ticks: { maxTicksLimit: 5, font: { size: 10 } }
+                    ticks: { maxTicksLimit: 5, font: { size: 9 } }
                 },
                 y1: {
                     type: 'linear',
@@ -244,7 +319,7 @@
                     title: { display: true, text: '%' },
                     beginAtZero: false,
                     grace: '5%',
-                    ticks: { maxTicksLimit: 5, font: { size: 10 } },
+                    ticks: { maxTicksLimit: 5, font: { size: 9 } },
                     grid: { drawOnChartArea: false }
                 }
             }));
@@ -255,15 +330,15 @@
                 borderColor: '#d2991d',
                 backgroundColor: 'rgba(210,153,29,0.1)',
                 fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 3,
+                pointHoverRadius: 5,
                 pointBackgroundColor: '#d2991d',
                 tension: 0.2
             }], {
                 y: {
                     beginAtZero: true,
                     grace: '5%',
-                    ticks: { maxTicksLimit: 5, stepSize: 1, font: { size: 10 } }
+                    ticks: { maxTicksLimit: 5, stepSize: 1, font: { size: 9 } }
                 }
             }));
 
@@ -273,15 +348,15 @@
                 borderColor: '#c084fc',
                 backgroundColor: 'rgba(192,132,252,0.1)',
                 fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 3,
+                pointHoverRadius: 5,
                 pointBackgroundColor: '#c084fc',
                 tension: 0.2
             }], {
                 y: {
                     beginAtZero: false,
                     grace: '5%',
-                    ticks: { maxTicksLimit: 5, stepSize: 10, font: { size: 10 } }
+                    ticks: { maxTicksLimit: 5, stepSize: 10, font: { size: 9 } }
                 }
             }));
         }
@@ -290,7 +365,6 @@
             renderSummary(data);
             renderCharts(data);
         }).catch(err => {
-            // 401 уже обработан в authFetch, здесь другие ошибки
             if (err.message !== 'Unauthorized') {
                 document.body.innerHTML += `<p style="color:red; text-align:center">Ошибка: ${err.message}</p>`;
             }
