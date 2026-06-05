@@ -79,21 +79,27 @@
     <div class="chart-container"><canvas id="bmrChart"></canvas></div>
 
     <script>
-        // Проверка авторизации
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login.html';
-        }
-
+        // Кнопка «Выйти» всегда работает
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = '/login.html';
         });
 
-        // Функция для fetch с токеном
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Функция запроса: при 401 автоматически сбрасывает токен и уходит на вход
         async function authFetch(url, options = {}) {
             const headers = { 'Authorization': 'Bearer ' + token, ...options.headers };
-            return fetch(url, { ...options, headers });
+            const res = await fetch(url, { ...options, headers });
+            if (res.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                throw new Error('Unauthorized');
+            }
+            return res;
         }
 
         Chart.defaults.color = '#c9d1d9';
@@ -284,7 +290,10 @@
             renderSummary(data);
             renderCharts(data);
         }).catch(err => {
-            document.body.innerHTML += `<p style="color:red; text-align:center">Ошибка: ${err.message}</p>`;
+            // 401 уже обработан в authFetch, здесь другие ошибки
+            if (err.message !== 'Unauthorized') {
+                document.body.innerHTML += `<p style="color:red; text-align:center">Ошибка: ${err.message}</p>`;
+            }
         });
 
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
@@ -302,7 +311,9 @@
                 status.textContent = `✅ ${result.message}`;
                 setTimeout(() => location.reload(), 1000);
             } catch (err) {
-                status.textContent = `❌ ${err.message}`;
+                if (err.message !== 'Unauthorized') {
+                    status.textContent = `❌ ${err.message}`;
+                }
             }
         });
     </script>

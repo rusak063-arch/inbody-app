@@ -11,7 +11,7 @@ from .database import SessionLocal, User
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 неделя
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 1 неделя
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
