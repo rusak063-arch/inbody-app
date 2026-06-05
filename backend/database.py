@@ -1,19 +1,27 @@
-from sqlalchemy import create_engine, Column, Date, Float, Integer, JSON
+from sqlalchemy import create_engine, Column, Date, Float, Integer, String, JSON, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
+import os
 
 DATABASE_URL = "sqlite:///inbody_progress.db"
-
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    measurements = relationship("InBodyMeasurement", back_populates="owner")
 
 class InBodyMeasurement(Base):
     __tablename__ = "inbody_measurements"
-
     id = Column(Integer, primary_key=True)
-    date = Column(Date, unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(Date, nullable=False)
     weight_kg = Column(Float)
     muscle_kg = Column(Float)
     fat_percent = Column(Float)
@@ -26,11 +34,10 @@ class InBodyMeasurement(Base):
     protein_kg = Column(Float)
     bone_kg = Column(Float)
     optimal_weight_kg = Column(Float)
-    # JSON поля: списки из 5 значений (правая рука, левая рука, туловище, правая нога, левая нога)
     segmental_muscle_kg = Column(JSON)
     segmental_muscle_pct = Column(JSON)
     segmental_fat_kg = Column(JSON)
     segmental_fat_pct = Column(JSON)
+    owner = relationship("User", back_populates="measurements")
 
-# Создать таблицы, если их ещё нет
 Base.metadata.create_all(bind=engine)

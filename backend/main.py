@@ -1,52 +1,41 @@
 import os
 import shutil
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-
-# Импорты из наших модулей (теперь относительные)
-from .database import SessionLocal, engine, Base, InBodyMeasurement
+from .database import SessionLocal, engine, Base, InBodyMeasurement, User
 from .parser import parse_inbody_pdf
+from .auth import router as auth_router, get_current_user
 
-# Создаём таблицы (на случай первого запуска)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-# Монтируем папку frontend как статику (доступна по /static)
-# Путь относительно корня проекта (где лежит frontend/)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
-# Папка для временного хранения загруженных PDF (внутри backend)
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
 @app.post("/upload/")
-async def upload_pdf(file: UploadFile = File(...)):
-    """Загрузить PDF, распарсить и сохранить в базу."""
-    # Сохраняем временно
+async def upload_pdf(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
     try:
         data = parse_inbody_pdf(file_path)
     except Exception as e:
         os.remove(file_path)
         raise HTTPException(status_code=400, detail=f"Ошибка парсинга: {e}")
-
-    # Удаляем временный файл
     os.remove(file_path)
 
-    # Сохраняем в БД (если на эту дату уже есть запись – обновляем)
     db = SessionLocal()
     try:
-        existing = db.query(InBodyMeasurement).filter_by(date=data["date"]).first()
+        existing = db.query(InBodyMeasurement).filter_by(date=data["date"], user_id=current_user.id).first()
         if existing:
             db.delete(existing)
             db.commit()
+        data["user_id"] = current_user.id
         measurement = InBodyMeasurement(**data)
         db.add(measurement)
         db.commit()
@@ -57,14 +46,11 @@ async def upload_pdf(file: UploadFile = File(...)):
     finally:
         db.close()
 
-
 @app.get("/measurements/")
-def get_measurements():
-    """Получить все измерения в хронологическом порядке."""
+def get_measurements(current_user: User = Depends(get_current_user)):
     db = SessionLocal()
     try:
-        rows = db.query(InBodyMeasurement).order_by(InBodyMeasurement.date).all()
-        # Преобразуем каждую строку в словарь, чтобы сериализовать JSON-поля
+        rows = db.query(InBodyMeasurement).filter_by(user_id=current_user.id).order_by(InBodyMeasurement.date).all()
         result = []
         for row in rows:
             item = {}
@@ -75,9 +61,27 @@ def get_measurements():
     finally:
         db.close()
 
+@app.get("/login.html", response_class=HTMLResponse)
+
+def login_page():
+
+    with open("frontend/login.html", "r", encoding="utf-8") as f:
+
+        return f.read()
+
+
+
+@app.get("/register.html", response_class=HTMLResponse)
+
+def register_page():
+
+    with open("frontend/register.html", "r", encoding="utf-8") as f:
+
+        return f.read()
+
+
 
 @app.get("/", response_class=HTMLResponse)
 def root():
-    """Главная страница с графиками."""
     with open("frontend/index.html", "r", encoding="utf-8") as f:
         return f.read()

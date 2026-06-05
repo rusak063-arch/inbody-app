@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBody - Регистрация</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e2f; color: #c9d1d9;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        .register-box {
+            background: #161b22; padding: 30px; border-radius: 10px;
+            width: 300px; text-align: center;
+        }
+        input {
+            width: 100%; padding: 10px; margin: 10px 0;
+            background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
+            border-radius: 5px;
+        }
+        button {
+            background: #238636; color: white; border: none;
+            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+            width: 100%; font-weight: bold;
+        }
+        button:hover { background: #2ea043; }
+        a { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="register-box">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Имя пользователя" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Пароль" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p>Уже есть аккаунт? <a href="/login.html">Войти</a></p>
+        <p id="error" style="color:red;"></p>
+    </div>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            if (res.ok) {
+                alert('Регистрация успешна! Теперь войдите.');
+                window.location.href = '/login.html';
+            } else {
+                const data = await res.json();
+                document.getElementById('error').textContent = data.detail || 'Ошибка регистрации';
+            }
+        });
+    </script>
+</body>
+</html>
