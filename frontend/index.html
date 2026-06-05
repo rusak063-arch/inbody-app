@@ -64,7 +64,7 @@
     <div style="text-align: right;"><button id="logoutBtn">Выйти</button></div>
     <h1>📊 Прогресс по InBody</h1>
     <div class="upload-container">
-        <form id="uploadForm" enctype="multipart/form-data">
+        <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <input type="file" id="pdfFile" name="file" accept=".pdf" required>
             <button type="submit">Загрузить PDF</button>
         </form>
