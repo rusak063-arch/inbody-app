@@ -33,6 +33,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-actions a {
+            color: #58a6ff;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
         #logoutBtn {
             background: #da3633;
             color: white;
@@ -43,12 +53,8 @@
             font-weight: bold;
             cursor: pointer;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
         #logoutBtn:hover { background: #c42e2b; }
-
         .upload-container {
             margin: 16px auto;
             background: #161b22;
@@ -86,7 +92,6 @@
         }
         button[type="submit"]:hover { background: #2ea043; }
         .status { margin-top: 10px; font-size: 0.9em; }
-
         .summary {
             display: flex;
             flex-wrap: wrap;
@@ -116,7 +121,6 @@
             color: #8b949e;
             margin-top: 4px;
         }
-
         .chart-container {
             width: calc(100% - 16px);
             max-width: 900px;
@@ -126,7 +130,6 @@
             padding: 12px;
         }
         canvas { max-height: 280px; height: auto; width: 100% !important; }
-
         @media (max-width: 600px) {
             .header h1 { font-size: 1.1em; }
             .card .value { font-size: 1.3em; }
@@ -138,7 +141,11 @@
 <body>
     <div class="header">
         <h1>📊 InBody</h1>
-        <button id="logoutBtn">🚪 Выйти</button>
+        <div class="header-actions">
+            <a href="/settings.html" title="Настройки">⚙️</a>
+            <a href="/admin.html" title="Администрирование" style="font-size:1.2em;">🔧</a>
+            <button id="logoutBtn">🚪 Выйти</button>
+        </div>
     </div>
 
     <div class="upload-container">

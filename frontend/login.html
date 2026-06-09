@@ -6,7 +6,7 @@
     <title>InBody - Вход</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background: #1e1e2f; color: #c9d1d9;
             display: flex; justify-content: center; align-items: center;
             height: 100vh; margin: 0;
@@ -51,7 +51,9 @@
             const res = await fetch('/auth/login', { method: 'POST', body: formData });
             if (res.ok) {
                 const data = await res.json();
+                // Сохраняем в localStorage И в cookie
                 localStorage.setItem('token', data.access_token);
+                document.cookie = `token=${data.access_token}; path=/; max-age=2592000; SameSite=Lax`;
                 window.location.href = '/';
             } else {
                 document.getElementById('error').textContent = 'Неверный логин или пароль';

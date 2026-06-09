@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Test Upload</title></head>
+<body>
+    <form id="frm" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Test Upload</button>
+    </form>
+    <p id="status"></p>
+    <script>
+        document.getElementById('frm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            document.getElementById('status').textContent = 'Uploading...';
+            try {
+                const res = await fetch('/upload-test/', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                document.getElementById('status').textContent = 'OK: ' + JSON.stringify(data);
+            } catch (err) {
+                document.getElementById('status').textContent = 'Error: ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, Column, Date, Float, Integer, String, JSON, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-import os
 
 DATABASE_URL = "sqlite:///inbody_progress.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -15,6 +14,8 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)          # <-- новое поле
+    telegram_id = Column(String, unique=True, nullable=True)  # <-- поле Telegram
     measurements = relationship("InBodyMeasurement", back_populates="owner")
 
 class InBodyMeasurement(Base):
@@ -40,4 +41,23 @@ class InBodyMeasurement(Base):
     segmental_fat_pct = Column(JSON)
     owner = relationship("User", back_populates="measurements")
 
+class AppSettings(Base):
+    __tablename__ = "app_settings"
+    key = Column(String, primary_key=True)
+    value = Column(String, nullable=False)
+
 Base.metadata.create_all(bind=engine)
+
+def get_setting(db, key: str, default=None):
+    """Получить значение настройки."""
+    s = db.query(AppSettings).filter_by(key=key).first()
+    return s.value if s else default
+
+def set_setting(db, key: str, value: str):
+    """Задать значение настройки (создать или обновить)."""
+    s = db.query(AppSettings).filter_by(key=key).first()
+    if s:
+        s.value = value
+    else:
+        db.add(AppSettings(key=key, value=value))
+    db.commit()

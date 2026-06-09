@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки – InBody</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e2f; color: #c9d1d9;
+            margin: 0; padding: 10px;
+        }
+        .header {
+            background: #161b22; padding: 12px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 1.3em; color: #58a6ff; margin: 0; }
+        a { color: #58a6ff; text-decoration: none; }
+        .content { max-width: 500px; margin: 20px auto; }
+        button {
+            background: #238636; color: white; border: none;
+            padding: 12px 20px; border-radius: 8px; font-size: 1em; cursor: pointer;
+        }
+        button:hover { background: #2ea043; }
+        #codeDisplay { background: #0d1117; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        #unlinkBtn { background: #da3633; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ Настройки</h1>
+        <a href="/">← Назад</a>
+    </div>
+    <div class="content">
+        <h2>Привязка Telegram</h2>
+        <p id="telegramStatus">Статус: проверяется...</p>
+        <button id="getCodeBtn" style="display:none;">Получить код привязки</button>
+        <div id="codeDisplay" style="display:none;">
+            <p>Ваш код: <strong id="codeValue"></strong></p>
+            <p>Отправьте боту <a href="#" target="_blank" id="botLink">@бот</a> команду <code>/start КОД</code></p>
+        </div>
+        <button id="unlinkBtn" style="display:none;">Отвязать Telegram</button>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login.html';
+
+        async function authFetch(url, options = {}) {
+            const headers = { 'Authorization': 'Bearer ' + token, ...options.headers };
+            const res = await fetch(url, { ...options, headers });
+            if (res.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                throw new Error('Unauthorized');
+            }
+            return res;
+        }
+
+        async function loadBotName() {
+            try {
+                const res = await fetch('/auth/bot-info');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.username) {
+                        document.getElementById('botLink').href = `https://t.me/${data.username}`;
+                        document.getElementById('botLink').textContent = `@${data.username}`;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        async function updateUI() {
+            const res = await authFetch('/auth/me');
+            if (!res.ok) return;
+            const user = await res.json();
+            if (user.telegram_id) {
+                document.getElementById('telegramStatus').textContent = 'Статус: Telegram привязан';
+                document.getElementById('unlinkBtn').style.display = 'block';
+                document.getElementById('getCodeBtn').style.display = 'none';
+            } else {
+                document.getElementById('telegramStatus').textContent = 'Статус: Telegram не привязан';
+                document.getElementById('getCodeBtn').style.display = 'block';
+                document.getElementById('unlinkBtn').style.display = 'none';
+            }
+        }
+
+        document.getElementById('getCodeBtn').addEventListener('click', async () => {
+            const res = await authFetch('/auth/telegram/link');
+            const data = await res.json();
+            document.getElementById('codeValue').textContent = data.code;
+            document.getElementById('codeDisplay').style.display = 'block';
+        });
+
+        document.getElementById('unlinkBtn').addEventListener('click', async () => {
+            await authFetch('/auth/telegram', { method: 'DELETE' });
+            document.getElementById('codeDisplay').style.display = 'none';
+            updateUI();
+        });
+
+        loadBotName();
+        updateUI();
+    </script>
+</body>
+</html>

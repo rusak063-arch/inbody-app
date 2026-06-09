@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Администрирование – InBody</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e2f; color: #c9d1d9;
+            margin: 0; padding: 10px;
+        }
+        .header {
+            background: #161b22; padding: 12px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 1.3em; color: #58a6ff; margin: 0; }
+        a { color: #58a6ff; text-decoration: none; }
+        .content { max-width: 600px; margin: 20px auto; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 12px; margin-top: 5px;
+            background: #0d1117; color: #c9d1d9;
+            border: 1px solid #30363d; border-radius: 6px;
+        }
+        button {
+            background: #238636; color: white; border: none;
+            padding: 12px 20px; border-radius: 8px; font-size: 1em; cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background: #2ea043; }
+        #restartBtn { background: #da3633; }
+        #restartBtn:hover { background: #c42e2b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Администрирование</h1>
+        <a href="/">← Назад</a>
+    </div>
+    <div class="content" id="mainContent" style="display:none;">
+        <h2>Настройки Telegram бота</h2>
+        <form id="settingsForm">
+            <label for="token">Токен бота (от @BotFather)</label>
+            <input type="password" id="token" name="token" required>
+            <label for="username">Имя бота (без @)</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Сохранить настройки</button>
+        </form>
+        <button id="restartBtn">Перезапустить бота</button>
+        <p id="status" style="margin-top:15px;"></p>
+    </div>
+    <script>
+        // Сначала проверяем авторизацию и права администратора
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        async function authFetch(url, options = {}) {
+            const headers = { 'Authorization': 'Bearer ' + token, ...options.headers };
+            const res = await fetch(url, { ...options, headers });
+            if (res.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                throw new Error('Unauthorized');
+            }
+            return res;
+        }
+
+        (async function checkAdmin() {
+            try {
+                const res = await authFetch('/auth/me');
+                if (!res.ok) {
+                    window.location.href = '/';
+                    return;
+                }
+                const user = await res.json();
+                if (!user.is_admin) {
+                    window.location.href = '/';
+                    return;
+                }
+                // Пользователь админ, показываем контент
+                document.getElementById('mainContent').style.display = 'block';
+                // Загружаем текущие настройки
+                try {
+                    const settingsRes = await authFetch('/auth/admin/settings');
+                    if (settingsRes.ok) {
+                        const data = await settingsRes.json();
+                        document.getElementById('token').value = data.telegram_bot_token || '';
+                        document.getElementById('username').value = data.bot_username || '';
+                    }
+                } catch(e) {}
+            } catch (e) {
+                window.location.href = '/';
+            }
+        })();
+
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const tokenVal = document.getElementById('token').value;
+            const username = document.getElementById('username').value;
+            const res = await authFetch('/auth/admin/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_bot_token: tokenVal, bot_username: username })
+            });
+            const data = await res.json();
+            document.getElementById('status').textContent = data.message || 'Сохранено';
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', async () => {
+            const res = await authFetch('/auth/admin/restart-bot', { method: 'POST' });
+            const data = await res.json();
+            document.getElementById('status').textContent = data.message || 'Бот перезапускается';
+        });
+    </script>
+</body>
+</html>
