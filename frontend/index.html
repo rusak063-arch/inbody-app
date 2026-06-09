@@ -275,18 +275,36 @@
             const fatPoints = data.map(d => ({ x: parseDate(d.date), y: d.fat_percent }));
             const visceralPoints = data.map(d => ({ x: parseDate(d.date), y: d.visceral_fat_level }));
             const bmrPoints = data.map(d => ({ x: parseDate(d.date), y: d.bmr_kcal }));
+            const optimalWeightPoints = data.map(d => ({ x: parseDate(d.date), y: d.optimal_weight_kg }));
 
-            new Chart(document.getElementById('weightChart'), createTimeChartConfig([{
-                label: 'Вес (кг)',
-                data: weightPoints,
-                borderColor: '#58a6ff',
-                backgroundColor: 'rgba(88,166,255,0.1)',
-                fill: true,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                pointBackgroundColor: '#58a6ff',
-                tension: 0.2
-            }]));
+            // График веса + оптимальный вес
+            new Chart(document.getElementById('weightChart'), createTimeChartConfig([
+                {
+                    label: 'Вес (кг)',
+                    data: weightPoints,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#58a6ff',
+                    tension: 0.2,
+                    order: 1
+                },
+                {
+                    label: 'Оптимальный вес (кг)',
+                    data: optimalWeightPoints,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'transparent',
+                    borderDash: [6, 4],
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: '#58a6ff',
+                    tension: 0.2,
+                    fill: false,
+                    order: 0
+                }
+            ]));
 
             new Chart(document.getElementById('muscleFatChart'), createTimeChartConfig([
                 {
